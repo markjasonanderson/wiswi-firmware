@@ -58,6 +58,7 @@ ${BINDIR}/wiswi.axf: ${OBJDIR}/main.o
 ${BINDIR}/wiswi.axf: ${OBJDIR}/pinmux.o
 ${BINDIR}/wiswi.axf: ${OBJDIR}/gpio_if.o
 ${BINDIR}/wiswi.axf: ${OBJDIR}/uart_if.o
+${BINDIR}/wiswi.axf: ${OBJDIR}/switch_task.o
 ${BINDIR}/wiswi.axf: ${OBJDIR}/freertos_hooks.o
 ${BINDIR}/wiswi.axf: ${OBJDIR}/startup_${COMPILER}.o
 ${BINDIR}/wiswi.axf: ${ROOT}/driverlib/${COMPILER}/${BINDIR}/libdriver.a
