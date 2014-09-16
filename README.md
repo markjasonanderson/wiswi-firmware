@@ -57,7 +57,7 @@ to connect to the console whilst running the serial JTAG you'll need to install 
 
 You can now connect to the console using 
       
-        > minicom -D /dev/tty.usebserial<id>
+        > minicom -D /dev/tty.usbserial-CC3200B
 
 To run the firmware you need openocd installed
 
