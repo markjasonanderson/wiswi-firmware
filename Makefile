@@ -10,6 +10,8 @@ ROOT=./cc3200-sdk
 include ${ROOT}/tools/gcc_scripts/makedefs
 
 CFLAGS+=-DUSE_FREERTOS
+CFLAGS+=-Dgcc
+CFLAGS+=-DSL_PLATFORM_MULTI_THREADED
 
 #
 # Where to find source files that do not live in this directory.
@@ -31,6 +33,8 @@ IPATH+=${ROOT}/third_party/FreeRTOS
 IPATH+=${ROOT}/third_party/FreeRTOS/source
 IPATH+=${ROOT}/third_party/FreeRTOS/source/portable/GCC/ARM_CM4
 IPATH+=${ROOT}/third_party/FreeRTOS/source/include
+IPATH+=${ROOT}/simplelink/include
+
 #
 # The default rule, which causes the driver library to be built.
 #
@@ -59,8 +63,11 @@ ${BINDIR}/wiswi.axf: ${OBJDIR}/pinmux.o
 ${BINDIR}/wiswi.axf: ${OBJDIR}/gpio_if.o
 ${BINDIR}/wiswi.axf: ${OBJDIR}/uart_if.o
 ${BINDIR}/wiswi.axf: ${OBJDIR}/switch_task.o
+${BINDIR}/wiswi.axf: ${OBJDIR}/smart_config_task.o
 ${BINDIR}/wiswi.axf: ${OBJDIR}/freertos_hooks.o
+${BINDIR}/wiswi.axf: ${OBJDIR}/udma_if.o
 ${BINDIR}/wiswi.axf: ${OBJDIR}/startup_${COMPILER}.o
+${BINDIR}/wiswi.axf: ${ROOT}/simplelink/${COMPILER}/${BINDIR}/libsimplelink.a
 ${BINDIR}/wiswi.axf: ${ROOT}/driverlib/${COMPILER}/${BINDIR}/libdriver.a
 ${BINDIR}/wiswi.axf: ${ROOT}/oslib/${COMPILER}/${BINDIR}/FreeRTOS.a	
 SCATTERgcc_wiswi=wiswi.ld

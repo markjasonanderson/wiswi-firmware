@@ -23,9 +23,14 @@
 #include "gpio.h"
 #include "gpio_if.h"
 
+#include "uart.h"
+#include "udma_if.h"
+#include "common.h"
+
 #include "pinmux.h"
 #include "log.h"
 #include "switch_task.h"
+#include "smart_config_task.h"
 
 #define TASK_STACK_SIZE 1024 
 #define SPAWN_TASK_PRIORITY   9
@@ -57,7 +62,10 @@ static void BoardInit(void)
 
 int main()
 {
+  long lRetVal = -1;
+
   BoardInit();
+  UDMAInit();
   PinMuxConfig();
 
   GPIO_IF_LedConfigure(LED1|LED2|LED3);
@@ -66,9 +74,19 @@ int main()
   printf("*************************"); 
   printf("* WiSwi Running"); 
   printf("*************************"); 
+  
+  lRetVal = VStartSimpleLinkSpawnTask(SPAWN_TASK_PRIORITY);
+  if(lRetVal < 0)
+  {
+    ERR_PRINT(lRetVal);
+    LOOP_FOREVER();
+  }
 
   osi_TaskCreate(SwitchTask, (signed portCHAR * ) "Switch Task",
     TASK_STACK_SIZE, NULL, 1, NULL );
+
+  osi_TaskCreate(SmartConfigTask, (signed portCHAR * ) "Smart Config Task",
+    2048, NULL, 1, NULL );
 
   osi_start();
 

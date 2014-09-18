@@ -12,7 +12,7 @@
 
 void SwitchTask(void *pvParameters)
 {
-  log_info("LED Task has started");
+  log_info("LED Task is running");
   GPIO_IF_LedOff(MCU_ALL_LED_IND);
   while(1)
   {
