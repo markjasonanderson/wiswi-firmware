@@ -64,6 +64,7 @@ ${BINDIR}/wiswi.axf: ${OBJDIR}/gpio_if.o
 ${BINDIR}/wiswi.axf: ${OBJDIR}/uart_if.o
 ${BINDIR}/wiswi.axf: ${OBJDIR}/switch_task.o
 ${BINDIR}/wiswi.axf: ${OBJDIR}/smart_config_task.o
+${BINDIR}/wiswi.axf: ${OBJDIR}/mdns.o
 ${BINDIR}/wiswi.axf: ${OBJDIR}/freertos_hooks.o
 ${BINDIR}/wiswi.axf: ${OBJDIR}/udma_if.o
 ${BINDIR}/wiswi.axf: ${OBJDIR}/startup_${COMPILER}.o

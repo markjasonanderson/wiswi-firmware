@@ -32,8 +32,10 @@
 #include "switch_task.h"
 #include "smart_config_task.h"
 
+
 #define TASK_STACK_SIZE 1024 
 #define SPAWN_TASK_PRIORITY   9
+
 
 #if defined(ccs) || defined(gcc)
 extern void (* const g_pfnVectors[])(void);

@@ -18,8 +18,9 @@
 #include "common.h"
 #include "uart_if.h"
 #include "log.h"
+#include "mdns.h"
 
-#define WLAN_DEL_ALL_PROFILES   0xFF
+
 
 // Application specific status/error codes
 typedef enum{
@@ -34,7 +35,7 @@ unsigned long  g_ulGatewayIP = 0; //Network Gateway IP address
 unsigned char  g_ucConnectionSSID[SSID_LEN_MAX+1]; //Connection SSID
 unsigned char  g_ucConnectionBSSID[BSSID_LEN_MAX]; //Connection BSSID
 
-int SmartConfigConnect();
+int smart_config_connect();
 static void InitialiseSmartConfigTask();
 
 void SimpleLinkWlanEventHandler(SlWlanEvent_t *pWlanEvent)
@@ -227,7 +228,7 @@ static void InitialiseSmartConfigTask()
   memset(g_ucConnectionBSSID,0,sizeof(g_ucConnectionBSSID));
 }
 
-static long SetupNetwork()
+static long setup_network()
 {
   SlVersionFull   ver = {0};
   _WlanRxFilterOperationCommandBuff_t  RxFilterIdMask = {0};
@@ -237,15 +238,15 @@ static long SetupNetwork()
   unsigned char ucConfigLen = 0;
   unsigned char ucPower = 0;
 
-  long lRetVal = -1;
+  long result = -1;
   long lMode = -1;
 
   // Get the device's version-information
   ucConfigOpt = SL_DEVICE_GENERAL_VERSION;
   ucConfigLen = sizeof(ver);
-  lRetVal = sl_DevGet(SL_DEVICE_GENERAL_CONFIGURATION, &ucConfigOpt, 
+  result = sl_DevGet(SL_DEVICE_GENERAL_CONFIGURATION, &ucConfigOpt,
       &ucConfigLen, (unsigned char *)(&ver));
-  ASSERT_ON_ERROR(lRetVal);
+  ASSERT_ON_ERROR(result);
 
   log_info("Host Driver Version: %s",SL_DRIVER_VERSION);
   log_info("Build Version %d.%d.%d.%d.31.%d.%d.%d.%d.%d.%d.%d.%d",
@@ -257,79 +258,59 @@ static long SetupNetwork()
 
   // Set connection policy to Auto + SmartConfig 
   //      (Device's default connection policy)
-  lRetVal = sl_WlanPolicySet(SL_POLICY_CONNECTION, 
+  result = sl_WlanPolicySet(SL_POLICY_CONNECTION,
       SL_CONNECTION_POLICY(1, 0, 0, 0, 1), NULL, 0);
-  ASSERT_ON_ERROR(lRetVal);
+  ASSERT_ON_ERROR(result);
 
   // Enable DHCP client
-  lRetVal = sl_NetCfgSet(SL_IPV4_STA_P2P_CL_DHCP_ENABLE,1,1,&ucVal);
-  ASSERT_ON_ERROR(lRetVal);
+  result = sl_NetCfgSet(SL_IPV4_STA_P2P_CL_DHCP_ENABLE,1,1,&ucVal);
+  ASSERT_ON_ERROR(result);
 
   // Disable scan
   ucConfigOpt = SL_SCAN_POLICY(0);
-  lRetVal = sl_WlanPolicySet(SL_POLICY_SCAN , ucConfigOpt, NULL, 0);
-  ASSERT_ON_ERROR(lRetVal);
+  result = sl_WlanPolicySet(SL_POLICY_SCAN , ucConfigOpt, NULL, 0);
+  ASSERT_ON_ERROR(result);
 
   // Set Tx power level for station mode
   // Number between 0-15, as dB offset from max power - 0 will set max power
   ucPower = 0;
-  lRetVal = sl_WlanSet(SL_WLAN_CFG_GENERAL_PARAM_ID, 
+  result = sl_WlanSet(SL_WLAN_CFG_GENERAL_PARAM_ID,
       WLAN_GENERAL_PARAM_OPT_STA_TX_POWER, 1, (unsigned char *)&ucPower);
-  ASSERT_ON_ERROR(lRetVal);
+  ASSERT_ON_ERROR(result);
 
   // Set PM policy to normal
-  lRetVal = sl_WlanPolicySet(SL_POLICY_PM , SL_NORMAL_POLICY, NULL, 0);
-  ASSERT_ON_ERROR(lRetVal);
+  result = sl_WlanPolicySet(SL_POLICY_PM , SL_NORMAL_POLICY, NULL, 0);
+  ASSERT_ON_ERROR(result);
 
   // Unregister mDNS services
-  lRetVal = sl_NetAppMDNSUnRegisterService(0, 0);
-  ASSERT_ON_ERROR(lRetVal);
+  result = sl_NetAppMDNSUnRegisterService(0, 0);
+  ASSERT_ON_ERROR(result);
 
   // Remove  all 64 filters (8*8)
   memset(RxFilterIdMask.FilterIdMask, 0xFF, 8);
-  lRetVal = sl_WlanRxFilterSet(SL_REMOVE_RX_FILTER, (_u8 *)&RxFilterIdMask,
+  result = sl_WlanRxFilterSet(SL_REMOVE_RX_FILTER, (_u8 *)&RxFilterIdMask,
       sizeof(_WlanRxFilterOperationCommandBuff_t));
-  ASSERT_ON_ERROR(lRetVal);
+  ASSERT_ON_ERROR(result);
 }
 
-//*****************************************************************************
-//
-//! \brief Connecting to a WLAN Accesspoint using SmartConfig provisioning
-//!
-//! Enables SmartConfig provisioning for adding a new connection profile
-//! to CC3200. Since we have set the connection policy to Auto, once
-//! SmartConfig is complete, CC3200 will connect automatically to the new
-//! connection profile added by smartConfig.
-//!
-//! \param[in]                     None
-//!
-//! eturn                        None
-//!
-//! ote
-//!
-//! \warning                    If the WLAN connection fails or we don't
-//!                             acquire an IP address, We will be stuck in this
-//!                             function forever.
-//
-//*****************************************************************************
-int SmartConfigConnect()
+int smart_config_connect()
 {
   unsigned char policyVal;
-  long lRetVal = -1;
+  long result = -1;
 
   if (!IS_CONNECTED(g_ulStatus)) 
   {
     //set AUTO policy
-    lRetVal = sl_WlanPolicySet(  SL_POLICY_CONNECTION,
+    result = sl_WlanPolicySet(  SL_POLICY_CONNECTION,
         SL_CONNECTION_POLICY(1,0,0,0,1),
         &policyVal,
         1 /*PolicyValLen*/);
-    ASSERT_ON_ERROR(lRetVal);
+    ASSERT_ON_ERROR(result);
 
     // Start SmartConfig
     // This example uses the unsecured SmartConfig method
     //
-    lRetVal = sl_WlanSmartConfigStart(0,                /*groupIdBitmask*/
+    result = sl_WlanSmartConfigStart(0,                /*groupIdBitmask*/
         SMART_CONFIG_CIPHER_NONE,    /*cipher*/
         0,                           /*publicKeyLen*/
         0,                           /*group1KeyLen*/
@@ -337,7 +318,7 @@ int SmartConfigConnect()
         NULL,                        /*publicKey */
         NULL,                        /*group1Key */
         NULL);                       /*group2Key*/
-    ASSERT_ON_ERROR(lRetVal);
+    ASSERT_ON_ERROR(result);
 
     // Wait for WLAN Event
     while((!IS_CONNECTED(g_ulStatus)) || (!IS_IP_ACQUIRED(g_ulStatus)))
@@ -353,18 +334,18 @@ int SmartConfigConnect()
     //wait for few moments
     MAP_UtilsDelay(80000000);
     //reset to default AUTO policy
-    lRetVal = sl_WlanPolicySet(  SL_POLICY_CONNECTION,
+    result = sl_WlanPolicySet(  SL_POLICY_CONNECTION,
         SL_CONNECTION_POLICY(1,0,0,0,0),
         &policyVal,
         1 /*PolicyValLen*/);
-    ASSERT_ON_ERROR(lRetVal);
+    ASSERT_ON_ERROR(result);
   }
   return SUCCESS;
 }
 
 void SmartConfigTask(void *pvParameters)
 {
-  long lRetVal = -1;
+  long result = -1;
 
   log_info("Smart Config Task is running");
   InitialiseSmartConfigTask();
@@ -372,21 +353,23 @@ void SmartConfigTask(void *pvParameters)
   CLR_STATUS_BIT_ALL(g_ulStatus);
   
   //Start simplelink
-  lRetVal = sl_Start(0,0,0);
-  if (lRetVal < 0 || ROLE_STA != lRetVal)
+  result = sl_Start(0,0,0);
+  if (result < 0 || ROLE_STA != result)
   {
     log_info("Failed to start the device ");
     LOOP_FOREVER();
   }
-  SetupNetwork();
 
+  setup_network();
   log_info("Device started as STATION ");
 
+  mdns_register();
+
   /* Connect to our AP using SmartConfig method */
-  lRetVal = SmartConfigConnect();
-  if(lRetVal < 0)
+  result = smart_config_connect();
+  if(result < 0)
   {
-    ERR_PRINT(lRetVal);
+    ERR_PRINT(result);
   }    
   LOOP_FOREVER();
 }
